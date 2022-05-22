@@ -2,7 +2,6 @@ package com.master.userservice.controller;
 
 import com.master.userservice.model.Roles;
 import com.master.userservice.model.User;
-import com.master.userservice.repository.CodeRepository;
 import com.master.userservice.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,12 +23,8 @@ import java.util.Optional;
 public class UserController {
 
     private final UserRepository repository;
-    private final CodeRepository repositoryC;
 
-    public UserController(UserRepository repository, CodeRepository repositoryC) {this.repository = repository;
-        this.repositoryC = repositoryC;
-    }
-
+    public UserController(UserRepository repository) {this.repository = repository;}
 
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     @ResponseBody

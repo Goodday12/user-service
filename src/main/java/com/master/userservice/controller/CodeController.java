@@ -1,7 +1,6 @@
 package com.master.userservice.controller;
 
 import com.master.userservice.model.Code;
-import com.master.userservice.model.Roles;
 import com.master.userservice.model.User;
 import com.master.userservice.repository.CodeRepository;
 import com.master.userservice.repository.UserRepository;
