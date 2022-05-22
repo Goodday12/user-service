@@ -21,36 +21,9 @@ import java.nio.charset.StandardCharsets;
 @SpringBootApplication
 public class UserServiceApplication {
 
-    @Value("#{environment.JWT_SECRET}")
-    private String secret;
 
     public static void main(String[] args) {
         SpringApplication.run(UserServiceApplication.class, args);
-    }
-
-
-    @Bean
-    GithubUsersAuthenticationConverter githubUsersAuthenticationConverter(UserRepository repository){
-        return new GithubUsersAuthenticationConverter(repository);
-    }
-    @Bean
-    public SecurityFilterChain securityWebFilterChain(HttpSecurity httpSecurity, GithubUsersAuthenticationConverter githubUsersAuthenticationConverter) throws Exception {
-        return httpSecurity
-                .authorizeHttpRequests(authorize -> authorize
-                        .anyRequest().authenticated()
-                )
-                .oauth2ResourceServer(oauth2Config -> oauth2Config
-                        .jwt(jwtConfigurer ->
-                                jwtConfigurer
-                                        .jwtAuthenticationConverter(githubUsersAuthenticationConverter)
-                                        .decoder(
-                                        NimbusJwtDecoder.withSecretKey(
-                                                new SecretKeySpec(Bytes.ensureCapacity(secret.getBytes(), 64,0), "HMAC256")
-                                        )
-                                                .build())
-                        )
-                )
-                .build();
     }
 
 }
