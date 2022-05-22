@@ -22,9 +22,9 @@ public class GithubUsersAuthenticationConverter implements Converter<Jwt, Abstra
         String userClaim = "user";
         String principalClaimValue = jwt.getClaimAsString(userClaim);
         final User user = userRepository.findUserByUsername(principalClaimValue).orElseGet(() -> userRepository.save(
-                User.builder().username(principalClaimValue).roles(Collections.singletonList(Roles.USER)).build()
+                User.builder().username(principalClaimValue).roles(Collections.singletonList("USER")).build()
         ));
-        return new JwtAuthenticationToken(jwt, user.getRoles(), principalClaimValue);
+        return new JwtAuthenticationToken(jwt, user.getRoles().stream().map(Roles::valueOf).toList(), principalClaimValue);
     }
 
 }

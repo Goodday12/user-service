@@ -2,6 +2,7 @@ package com.master.userservice.controller;
 
 import com.master.userservice.model.Roles;
 import com.master.userservice.model.User;
+import com.master.userservice.repository.CodeRepository;
 import com.master.userservice.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +24,11 @@ import java.util.Optional;
 public class UserController {
 
     private final UserRepository repository;
+    private final CodeRepository repositoryC;
 
-    public UserController(UserRepository repository) {this.repository = repository;}
+    public UserController(UserRepository repository, CodeRepository repositoryC) {this.repository = repository;
+        this.repositoryC = repositoryC;
+    }
 
 
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
@@ -51,13 +55,13 @@ public class UserController {
         return ResponseEntity.of(Optional.of(updatedUser));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<List<User>> getAllUsers(){
         return ResponseEntity.of(Optional.of(repository.findAll()));
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAuthority('USER')")
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity<Void> deleteUser(Authentication authentication, @PathVariable String id) {
         final Optional<User> byId = repository.findById(id);
