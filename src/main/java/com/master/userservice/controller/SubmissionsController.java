@@ -3,7 +3,6 @@ package com.master.userservice.controller;
 import com.master.userservice.model.Code;
 import com.master.userservice.model.Submission;
 import com.master.userservice.model.User;
-import com.master.userservice.repository.CodeRepository;
 import com.master.userservice.repository.SubmissionsRepository;
 import com.master.userservice.repository.UserRepository;
 import com.netflix.appinfo.InstanceInfo;
@@ -19,12 +18,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.master.userservice.model.Roles.ADMIN;
 
@@ -69,25 +67,24 @@ public class SubmissionsController {
 
     @PreAuthorize("hasAuthority('USER')")
     @RequestMapping(value = "/submissions", method = RequestMethod.POST)
-    public ResponseEntity<Submission> sendSubmissionForCheck(Authentication authentication,
-                                                             @PathVariable String userId, @RequestBody Code code) {
+    public ResponseEntity<Flux<Submission>> sendSubmissionForCheck(Authentication authentication,
+                                                                   @PathVariable String userId,
+                                                                   @RequestBody List<String> codes) {
         final User user = userRepository.findById(userId).orElseThrow(RuntimeException::new);
         if (!(authentication.getName().equals(user.getUsername()) || authentication.getAuthorities().contains(ADMIN))) {
             throw new AccessDeniedException("You can't check not your code");
         }
-        AtomicReference<Optional<Submission>> requestedSubmission = new AtomicReference<>(Optional.empty());
-        user.getCodes().stream().filter(userCode -> userCode.getId().equals(code.getId())).findFirst().ifPresent(codeToCheck -> {
-            final InstanceInfo plagiarismService = discoveryClient.getNextServerFromEureka(PLAGIARISM_SERVICE_NAME,
-                    false);
-            final WebClient webClient = WebClient.create(plagiarismService.getHomePageUrl());
-            final Mono<Submission> submissionMono = webClient.post()
-                    .uri(URI.create("/check-plagiarism"))
-                    .body(Mono.just(code), Code.class)
-                    .retrieve()
-                    .bodyToMono(Submission.class);
-            requestedSubmission.set(Optional.ofNullable(submissionMono.block()));
-        });
-        return ResponseEntity.of(requestedSubmission.get());
+        final List<Code> codeList =
+                user.getCodes().stream().filter(userCode -> codes.contains(userCode.getId())).toList();
+
+        final InstanceInfo plagiarismService = discoveryClient.getNextServerFromEureka(PLAGIARISM_SERVICE_NAME,
+                false);
+        final WebClient webClient = WebClient.create(plagiarismService.getHomePageUrl());
+        return ResponseEntity.of(Optional.of(webClient.post()
+                .uri(URI.create("/check-plagiarism"))
+                .body(Flux.fromIterable(codeList), Code.class)
+                .retrieve()
+                .bodyToFlux(Submission.class)));
     }
 
     @PreAuthorize("hasAuthority('USER')")
